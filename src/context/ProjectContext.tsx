@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import apiService from '../services/api';
 
 interface Project {
   id: string;
@@ -39,120 +40,111 @@ const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
 export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const savedProjects = localStorage.getItem('skillbridge_projects');
-    if (savedProjects) {
-      setProjects(JSON.parse(savedProjects));
-    } else {
-      // Initialize with sample projects
-      const sampleProjects: Project[] = [
-        {
-          id: '1',
-          title: 'E-commerce Website Development',
-          description: 'Looking for a skilled developer to build a modern e-commerce website with payment integration.',
-          budget: 2500,
-          category: 'Web Development',
-          skills: ['React', 'Node.js', 'MongoDB', 'Stripe'],
-          deadline: '2024-03-15',
-          clientId: 'client1',
-          clientName: 'TechCorp Ltd',
-          status: 'open',
-          proposals: [],
-          createdAt: '2024-01-15'
-        },
-        {
-          id: '2',
-          title: 'Wedding Event Planning',
-          description: 'Need an experienced event planner for a 150-guest wedding ceremony and reception.',
-          budget: 3000,
-          category: 'Event Planning',
-          skills: ['Event Planning', 'Vendor Management', 'Budget Management'],
-          deadline: '2024-06-20',
-          clientId: 'client2',
-          clientName: 'Sarah Johnson',
-          status: 'open',
-          proposals: [],
-          createdAt: '2024-01-10'
-        },
-        {
-          id: '3',
-          title: 'Mobile App UI/UX Design',
-          description: 'Looking for a creative designer to create a modern and user-friendly mobile app interface.',
-          budget: 1800,
-          category: 'Design',
-          skills: ['UI/UX Design', 'Figma', 'Mobile Design'],
-          deadline: '2024-02-28',
-          clientId: 'client3',
-          clientName: 'StartupXYZ',
-          status: 'open',
-          proposals: [],
-          createdAt: '2024-01-08'
-        }
-      ];
-      setProjects(sampleProjects);
-      localStorage.setItem('skillbridge_projects', JSON.stringify(sampleProjects));
-    }
+    loadProjects();
   }, []);
 
-  const addProject = (projectData: Omit<Project, 'id' | 'proposals' | 'createdAt'>) => {
-    const newProject: Project = {
-      ...projectData,
-      id: Date.now().toString(),
-      proposals: [],
-      createdAt: new Date().toISOString().split('T')[0]
-    };
-
-    const updatedProjects = [...projects, newProject];
-    setProjects(updatedProjects);
-    localStorage.setItem('skillbridge_projects', JSON.stringify(updatedProjects));
+  const loadProjects = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getProjects();
+      setProjects(response.projects.map(transformProject));
+    } catch (error) {
+      console.error('Failed to load projects:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const submitProposal = (proposalData: Omit<Proposal, 'id' | 'createdAt'>) => {
-    const newProposal: Proposal = {
-      ...proposalData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString().split('T')[0]
-    };
+  const transformProject = (apiProject: any): Project => ({
+    id: apiProject.id,
+    title: apiProject.title,
+    description: apiProject.description,
+    budget: apiProject.budget,
+    category: apiProject.category,
+    skills: apiProject.skills,
+    deadline: apiProject.deadline,
+    clientId: apiProject.clientId || apiProject.client_id,
+    clientName: apiProject.clientName,
+    status: apiProject.status,
+    proposals: apiProject.proposals || [],
+    createdAt: apiProject.createdAt
+  });
 
-    const updatedProjects = projects.map(project =>
-      project.id === proposalData.projectId
-        ? { ...project, proposals: [...project.proposals, newProposal] }
-        : project
-    );
-
-    setProjects(updatedProjects);
-    localStorage.setItem('skillbridge_projects', JSON.stringify(updatedProjects));
+  const addProject = async (projectData: Omit<Project, 'id' | 'proposals' | 'createdAt'>) => {
+    try {
+      const response = await apiService.createProject({
+        title: projectData.title,
+        description: projectData.description,
+        budget: projectData.budget,
+        category: projectData.category,
+        skills: projectData.skills,
+        deadline: projectData.deadline
+      });
+      
+      const newProject = transformProject(response.project);
+      setProjects(prev => [newProject, ...prev]);
+      return true;
+    } catch (error) {
+      console.error('Failed to create project:', error);
+      return false;
+    }
   };
 
-  const updateProjectStatus = (projectId: string, status: Project['status']) => {
-    const updatedProjects = projects.map(project =>
-      project.id === projectId ? { ...project, status } : project
-    );
-
-    setProjects(updatedProjects);
-    localStorage.setItem('skillbridge_projects', JSON.stringify(updatedProjects));
+  const submitProposal = async (proposalData: Omit<Proposal, 'id' | 'createdAt'>) => {
+    try {
+      await apiService.submitProposal({
+        projectId: proposalData.projectId,
+        coverLetter: proposalData.coverLetter,
+        proposedBudget: proposalData.proposedBudget,
+        timeline: proposalData.timeline
+      });
+      
+      // Reload projects to get updated proposal count
+      await loadProjects();
+      return true;
+    } catch (error) {
+      console.error('Failed to submit proposal:', error);
+      return false;
+    }
   };
 
-  const updateProposalStatus = (proposalId: string, status: Proposal['status']) => {
-    const updatedProjects = projects.map(project => ({
-      ...project,
-      proposals: project.proposals.map(proposal =>
-        proposal.id === proposalId ? { ...proposal, status } : proposal
-      )
-    }));
+  const updateProjectStatus = async (projectId: string, status: Project['status']) => {
+    try {
+      await apiService.updateProject(projectId, { status });
+      setProjects(prev => prev.map(project =>
+        project.id === projectId ? { ...project, status } : project
+      ));
+      return true;
+    } catch (error) {
+      console.error('Failed to update project status:', error);
+      return false;
+    }
+  };
 
-    setProjects(updatedProjects);
-    localStorage.setItem('skillbridge_projects', JSON.stringify(updatedProjects));
+  const updateProposalStatus = async (proposalId: string, status: Proposal['status']) => {
+    try {
+      await apiService.updateProposalStatus(proposalId, status);
+      // Reload projects to get updated proposals
+      await loadProjects();
+      return true;
+    } catch (error) {
+      console.error('Failed to update proposal status:', error);
+      return false;
+    }
   };
 
   return (
     <ProjectContext.Provider value={{
       projects,
+      loading,
       addProject,
       submitProposal,
       updateProjectStatus,
-      updateProposalStatus
+      updateProposalStatus,
+      loadProjects
     }}>
       {children}
     </ProjectContext.Provider>

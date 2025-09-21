@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import apiService from '../services/api';
 
 interface User {
   id: string;
@@ -27,71 +28,76 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('skillbridge_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
+    const initializeAuth = async () => {
+      const token = localStorage.getItem('skillbridge_token');
+      if (token) {
+        try {
+          const response = await apiService.getCurrentUser();
+          setUser(response.user);
+        } catch (error) {
+          console.error('Failed to get current user:', error);
+          localStorage.removeItem('skillbridge_token');
+        }
+      }
+      setLoading(false);
+    };
+
+    initializeAuth();
   }, []);
 
   const login = async (email: string, password: string, userType: 'client' | 'freelancer') => {
-    // Simulate API call
-    const users = JSON.parse(localStorage.getItem('skillbridge_users') || '[]');
-    const foundUser = users.find((u: any) => u.email === email && u.password === password && u.userType === userType);
-    
-    if (foundUser) {
-      const { password: _, ...userWithoutPassword } = foundUser;
-      setUser(userWithoutPassword);
-      localStorage.setItem('skillbridge_user', JSON.stringify(userWithoutPassword));
+    try {
+      const response = await apiService.login({ email, password, userType });
+      setUser(response.user);
       return true;
+    } catch (error) {
+      console.error('Login failed:', error);
+      return false;
     }
-    return false;
   };
 
   const register = async (userData: any) => {
-    const users = JSON.parse(localStorage.getItem('skillbridge_users') || '[]');
-    
-    // Check if user already exists
-    if (users.find((u: any) => u.email === userData.email)) {
+    try {
+      const response = await apiService.register(userData);
+      setUser(response.user);
+      return true;
+    } catch (error) {
+      console.error('Registration failed:', error);
       return false;
     }
-
-    const newUser = {
-      id: Date.now().toString(),
-      ...userData,
-      profile: {}
-    };
-
-    users.push(newUser);
-    localStorage.setItem('skillbridge_users', JSON.stringify(users));
-    
-    const { password: _, ...userWithoutPassword } = newUser;
-    setUser(userWithoutPassword);
-    localStorage.setItem('skillbridge_user', JSON.stringify(userWithoutPassword));
-    return true;
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('skillbridge_user');
-  };
-
-  const updateProfile = (profileData: any) => {
-    if (user) {
-      const updatedUser = { ...user, profile: { ...user.profile, ...profileData } };
-      setUser(updatedUser);
-      localStorage.setItem('skillbridge_user', JSON.stringify(updatedUser));
-      
-      // Update in users array
-      const users = JSON.parse(localStorage.getItem('skillbridge_users') || '[]');
-      const userIndex = users.findIndex((u: any) => u.id === user.id);
-      if (userIndex !== -1) {
-        users[userIndex] = { ...users[userIndex], profile: updatedUser.profile };
-        localStorage.setItem('skillbridge_users', JSON.stringify(users));
-      }
+  const logout = async () => {
+    try {
+      await apiService.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setUser(null);
     }
   };
+
+  const updateProfile = async (profileData: any) => {
+    try {
+      const response = await apiService.updateProfile(profileData);
+      setUser(response.user);
+      return true;
+    } catch (error) {
+      console.error('Profile update failed:', error);
+      return false;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={{ user, login, register, logout, updateProfile }}>
