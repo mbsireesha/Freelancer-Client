@@ -62,7 +62,7 @@ const Header: React.FC = () => {
                   Login
                 </Link>
                 <Link to="/register" className="btn-primary">
-                  Get Started
+                  Sign Up
                 </Link>
               </div>
             )}
