@@ -35,11 +35,13 @@ class ApiService {
 
     try {
       const response = await fetch(url, config);
-      const data = await response.json();
-
+      
       if (!response.ok) {
-        throw new Error(data.error || `HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || errorData.error || `HTTP error! status: ${response.status}`);
       }
+      
+      const data = await response.json();
 
       return data;
     } catch (error) {
@@ -104,6 +106,9 @@ class ApiService {
     return this.request(`/users/search/freelancers?${params}`);
   }
 
+  async getUserStats() {
+    return this.request('/users/stats');
+  }
   // Project endpoints
   async getProjects(filters = {}) {
     const params = new URLSearchParams(filters);
@@ -134,8 +139,9 @@ class ApiService {
     });
   }
 
-  async getMyProjects() {
-    return this.request('/projects/user/my-projects');
+  async getMyProjects(filters = {}) {
+    const params = new URLSearchParams(filters);
+    return this.request(`/projects/user/my-projects?${params}`);
   }
 
   // Proposal endpoints

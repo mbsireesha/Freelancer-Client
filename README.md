@@ -13,7 +13,7 @@ A modern full-stack web platform that connects clients with freelancers across b
 
 ## 🛠️ Tech Stack
 
-### Frontend (React)
+### Frontend
 - **Framework**: React 18 with TypeScript
 - **Styling**: Tailwind CSS
 - **Build Tool**: Vite
@@ -21,13 +21,14 @@ A modern full-stack web platform that connects clients with freelancers across b
 - **Icons**: Lucide React
 - **Routing**: React Router DOM
 
-### Backend (Java Spring Boot)
-- **Framework**: Spring Boot 3.2.0
-- **Security**: Spring Security with JWT
-- **Database**: MySQL 8.0
-- **ORM**: Spring Data JPA with Hibernate
-- **Build Tool**: Maven
-- **Java Version**: 17
+### Backend
+- **Runtime**: Node.js 16+
+- **Framework**: Express.js
+- **Database**: PostgreSQL (Supabase)
+- **Authentication**: JWT tokens
+- **Security**: Helmet, CORS, Rate limiting
+- **Validation**: Express Validator
+- **Logging**: Winston
 
 ## 📋 Project Categories
 
@@ -50,22 +51,17 @@ A modern full-stack web platform that connects clients with freelancers across b
 ## 🚀 Getting Started
 
 ### Prerequisites
-- **Frontend**: Node.js (v16 or higher)
-- **Backend**: Java 17 or higher
-- **Database**: MySQL 8.0 or higher
-- **Build Tools**: Maven, npm or yarn
+- **Node.js**: v16 or higher
+- **npm**: v7 or higher
+- **Supabase Account**: For database hosting
 
 ### Project Structure
 ```
 skillbridge-freelancer-platform/
-├── frontend/                 # React frontend application
-│   ├── src/
-│   ├── public/
-│   └── package.json
-├── backend/                  # Java Spring Boot backend
-│   ├── src/main/java/
-│   ├── src/main/resources/
-│   └── pom.xml
+├── src/                      # React frontend source
+├── server/                   # Node.js backend
+├── supabase/                 # Database migrations
+├── package.json              # Frontend dependencies
 └── README.md
 ```
 
@@ -73,72 +69,54 @@ skillbridge-freelancer-platform/
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/YOUR-USERNAME/skillbridge-freelancer-platform.git
+git clone https://github.com/your-username/skillbridge-freelancer-platform.git
 cd skillbridge-freelancer-platform
 ```
 
-2. **Frontend Setup:**
+2. **Install Dependencies:**
 ```bash
 # Install frontend dependencies
 npm install
+
+
+
+
+# Install backend dependencies
+npm run server:install
 ```
 
-3. **Backend Setup:**
-```bash
-# Navigate to backend directory
-cd backend
+3. **Database Setup:**
+- Create a new project on [Supabase](https://supabase.com)
+- Copy your project URL and service role key
+- Run the migration files in your Supabase dashboard
 
-# Build the project
-mvn clean install
+4. **Environment Configuration:**
 
-# Or use Maven wrapper (if available)
-./mvnw clean install
-```
-
-4. **Database Setup:**
-```sql
--- Create MySQL database
-CREATE DATABASE skillbridge;
-
--- Create user (optional)
-CREATE USER 'skillbridge_user'@'localhost' IDENTIFIED BY 'your_password';
-GRANT ALL PRIVILEGES ON skillbridge.* TO 'skillbridge_user'@'localhost';
-FLUSH PRIVILEGES;
-```
-
-5. **Environment Configuration:**
-
-**Frontend (.env):**
+**Create .env file:**
 ```env
-VITE_API_URL=http://localhost:8080/api
+VITE_SUPABASE_URL=your_supabase_project_url
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+JWT_SECRET=your_jwt_secret_key
+PORT=3001
+NODE_ENV=development
+FRONTEND_URL=http://localhost:5173
 ```
 
-**Backend (application.yml):**
-```yaml
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/skillbridge
-    username: your_username
-    password: your_password
-```
+5. **Start the development servers:**
 
-6. **Start the development servers:**
-
-**Start Backend (Terminal 1):**
 ```bash
-cd backend
-mvn spring-boot:run
-# Backend runs on http://localhost:8080
-```
+# Start both frontend and backend
+npm run dev:full
 
-**Start Frontend (Terminal 2):**
-```bash
-# From project root
+# Or start them separately:
+# Terminal 1 - Backend
+npm run dev:server
+
+# Terminal 2 - Frontend  
 npm run dev
-# Frontend runs on http://localhost:5173
 ```
 
-7. Open your browser and navigate to `http://localhost:5173`
+6. Open your browser and navigate to `http://localhost:5173`
 
 ## 📱 Usage
 
@@ -183,67 +161,45 @@ npm run dev
 - `npm run lint` - Run ESLint
 
 **Backend Scripts:**
-- `mvn spring-boot:run` - Start backend server
-- `mvn clean install` - Build the project
-- `mvn test` - Run tests
-- `mvn clean package` - Package for deployment
+- `npm run dev:server` - Start backend development server
+- `npm run server:start` - Start backend in production mode
+- `npm run dev:full` - Start both frontend and backend
 
 ### Project Structure
 ```
-frontend/
-├── src/
-│   ├── components/          # Reusable UI components
-│   ├── context/            # React Context providers
-│   ├── pages/              # Page components
-│   ├── services/           # API service layer
-│   └── utils/              # Utility functions
-└── package.json
+src/
+├── components/              # Reusable UI components
+├── context/                # React Context providers
+├── pages/                  # Page components
+├── services/               # API service layer
+└── utils/                  # Utility functions
 
-backend/
-├── src/main/java/com/skillbridge/
-│   ├── controller/         # REST API controllers
-│   ├── service/           # Business logic services
-│   ├── repository/        # Data access layer
-│   ├── model/             # JPA entities
-│   ├── security/          # Security configuration
-│   └── config/            # Application configuration
-├── src/main/resources/
-│   └── application.yml    # Application properties
-└── pom.xml               # Maven dependencies
+server/
+├── routes/                 # API route handlers
+├── middleware/             # Express middleware
+├── config/                 # Configuration files
+├── utils/                  # Utility functions
+└── index.js               # Server entry point
 ```
 
-## 🗄️ Database Schema (MySQL)
+## 🗄️ Database Schema (PostgreSQL)
 
-The application uses MySQL with the following main tables:
+The application uses PostgreSQL (Supabase) with the following main tables:
 
 - **users**: User accounts with profiles (clients and freelancers)
 - **projects**: Project listings posted by clients with skills and requirements
 - **proposals**: Proposals submitted by freelancers with cover letters and budgets
-- **user_skills**: Many-to-many relationship for user skills
-- **project_skills**: Many-to-many relationship for project required skills
 
 ### Environment Variables
 
-**Frontend (.env):**
+**Required Environment Variables (.env):**
 ```env
-VITE_API_URL=http://localhost:8080/api
-```
-
-**Backend (application.yml):**
-```yaml
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/skillbridge
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:password}
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
-app:
-  jwt:
-    secret: ${JWT_SECRET:mySecretKey}
-    expiration: 604800000 # 7 days
+VITE_SUPABASE_URL=your_supabase_project_url
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+JWT_SECRET=your_jwt_secret_key
+PORT=3001
+NODE_ENV=development
+FRONTEND_URL=http://localhost:5173
 ```
 
 ## 🏗️ API Endpoints
@@ -253,11 +209,13 @@ app:
 - `POST /api/auth/login` - User login
 - `GET /api/auth/me` - Get current user profile
 - `POST /api/auth/logout` - User logout
+- `POST /api/auth/refresh` - Refresh JWT token
 
 ### Users
 - `GET /api/users/{id}` - Get user profile
 - `PUT /api/users/profile` - Update user profile
-- `GET /api/users/freelancers` - Search freelancers
+- `GET /api/users/search/freelancers` - Search freelancers
+- `GET /api/users/stats` - Get user statistics
 
 ### Projects
 - `GET /api/projects` - Get all projects (with filters)
@@ -265,7 +223,7 @@ app:
 - `POST /api/projects` - Create new project (clients only)
 - `PUT /api/projects/{id}` - Update project
 - `DELETE /api/projects/{id}` - Delete project
-- `GET /api/projects/my-projects` - Get user's projects
+- `GET /api/projects/user/my-projects` - Get user's projects
 
 ### Proposals
 - `POST /api/proposals` - Submit proposal (freelancers only)
@@ -283,15 +241,15 @@ app:
 
 ### Backend Deployment
 - **Heroku**: Java buildpack
-- **AWS Elastic Beanstalk**: Java platform
-- **DigitalOcean App Platform**: Java service
+- **Railway**: Connect GitHub repository
+- **DigitalOcean App Platform**: Node.js service
 - **Railway**: Connect GitHub repository
 
 ### Database Deployment
-- **AWS RDS**: MySQL instance
-- **Google Cloud SQL**: MySQL database
-- **DigitalOcean Managed Databases**: MySQL cluster
-- **PlanetScale**: Serverless MySQL platform
+- **Supabase**: Managed PostgreSQL (recommended)
+- **AWS RDS**: PostgreSQL instance
+- **Google Cloud SQL**: PostgreSQL database
+- **DigitalOcean Managed Databases**: PostgreSQL cluster
 
 ## 🤝 Contributing
 
@@ -310,31 +268,31 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### Common Issues:
 
 1. **Database Connection Issues:**
-   - Ensure MySQL is running
-   - Check database credentials in application.yml
-   - Verify database exists and user has permissions
+   - Check Supabase URL and service role key
+   - Verify environment variables are loaded
+   - Ensure database migrations are applied
 
 2. **CORS Issues:**
-   - Check CORS configuration in SecurityConfig.java
-   - Ensure frontend URL is allowed in CORS origins
+   - Check CORS configuration in server/index.js
+   - Verify FRONTEND_URL environment variable
 
 3. **JWT Token Issues:**
-   - Verify JWT secret is set in application.yml
+   - Verify JWT_SECRET environment variable
    - Check token expiration settings
    - Ensure Authorization header format: "Bearer <token>"
 
-4. **Build Issues:**
-   - Ensure Java 17 is installed
-   - Check Maven installation
-   - Clear Maven cache: `mvn clean`
+4. **Installation Issues:**
+   - Ensure Node.js 16+ is installed
+   - Clear npm cache: `npm cache clean --force`
+   - Delete node_modules and reinstall: `rm -rf node_modules && npm install`
 
 ## 🙏 Acknowledgments
 
-- **Frontend**: Built with React 18 and modern web technologies
-- **Backend**: Powered by Spring Boot and Spring Security
+- **Frontend**: Built with React 18, TypeScript, and Tailwind CSS
+- **Backend**: Powered by Node.js, Express.js, and Supabase
 - Icons provided by Lucide React
-- Styling powered by Tailwind CSS
-- Database: MySQL for reliable data storage
+- Database: PostgreSQL via Supabase
+- Authentication: JWT tokens with bcrypt hashing
 
 ## 📞 Contact
 
@@ -345,8 +303,8 @@ For questions or support, please open an issue on GitHub.
 **SkillBridge** - Bridging the gap between talent and opportunity 🌉
 
 ### 🏆 **Full-Stack Architecture:**
-- **Frontend**: React + TypeScript + Tailwind CSS
-- **Backend**: Java Spring Boot + Spring Security
-- **Database**: MySQL with JPA/Hibernate
+- **Frontend**: React 18 + TypeScript + Tailwind CSS
+- **Backend**: Node.js + Express.js + JWT Authentication
+- **Database**: PostgreSQL (Supabase) with Row Level Security
 - **Authentication**: JWT-based security
 - **API**: RESTful web services

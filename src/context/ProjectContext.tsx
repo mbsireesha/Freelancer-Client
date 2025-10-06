@@ -50,42 +50,23 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       setLoading(true);
       const response = await apiService.getProjects();
-      setProjects(response.projects.map(transformProject));
+      setProjects(response.projects || []);
     } catch (error) {
       console.error('Failed to load projects:', error);
+      setProjects([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const transformProject = (apiProject: any): Project => ({
-    id: apiProject.id,
-    title: apiProject.title,
-    description: apiProject.description,
-    budget: apiProject.budget,
-    category: apiProject.category,
-    skills: apiProject.skills,
-    deadline: apiProject.deadline,
-    clientId: apiProject.clientId || apiProject.client_id,
-    clientName: apiProject.clientName,
-    status: apiProject.status,
-    proposals: apiProject.proposals || [],
-    createdAt: apiProject.createdAt
-  });
 
   const addProject = async (projectData: Omit<Project, 'id' | 'proposals' | 'createdAt'>) => {
     try {
-      const response = await apiService.createProject({
-        title: projectData.title,
-        description: projectData.description,
-        budget: projectData.budget,
-        category: projectData.category,
-        skills: projectData.skills,
-        deadline: projectData.deadline
-      });
+      const response = await apiService.createProject(projectData);
       
-      const newProject = transformProject(response.project);
-      setProjects(prev => [newProject, ...prev]);
+      if (response.project) {
+        setProjects(prev => [response.project, ...prev]);
+      }
       return true;
     } catch (error) {
       console.error('Failed to create project:', error);
@@ -95,12 +76,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const submitProposal = async (proposalData: Omit<Proposal, 'id' | 'createdAt'>) => {
     try {
-      await apiService.submitProposal({
-        projectId: proposalData.projectId,
-        coverLetter: proposalData.coverLetter,
-        proposedBudget: proposalData.proposedBudget,
-        timeline: proposalData.timeline
-      });
+      await apiService.submitProposal(proposalData);
       
       // Reload projects to get updated proposal count
       await loadProjects();
@@ -114,9 +90,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const updateProjectStatus = async (projectId: string, status: Project['status']) => {
     try {
       await apiService.updateProject(projectId, { status });
-      setProjects(prev => prev.map(project =>
-        project.id === projectId ? { ...project, status } : project
-      ));
+      // Reload projects to get updated data
+      await loadProjects();
       return true;
     } catch (error) {
       console.error('Failed to update project status:', error);
@@ -139,12 +114,10 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   return (
     <ProjectContext.Provider value={{
       projects,
-      loading,
       addProject,
       submitProposal,
       updateProjectStatus,
-      updateProposalStatus,
-      loadProjects
+      updateProposalStatus
     }}>
       {children}
     </ProjectContext.Provider>
